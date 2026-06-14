@@ -103,6 +103,7 @@ export async function writeDb(data: Database): Promise<void> {
       const blob = await put('db.json', JSON.stringify(data, null, 2), {
         access: 'private',
         addRandomSuffix: false,
+        allowOverwrite: true,
         token,
       });
       dbBlobUrl = blob.url; // Cache the url

@@ -18,6 +18,7 @@ export async function uploadFile(buffer: Buffer, filename: string, mimeType?: st
     const blob = await put(filename, buffer, {
       access: 'private',
       contentType: mimeType,
+      addRandomSuffix: true,
       token,
     });
     return blob.url;
