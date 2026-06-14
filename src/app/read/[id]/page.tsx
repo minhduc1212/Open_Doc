@@ -281,7 +281,7 @@ export default function Reader() {
               {/* Render PDF */}
               {docType === 'pdf' && (
                 <iframe
-                  src={docUrl}
+                  src={`/api/docs/${id}/download?disposition=inline`}
                   style={{
                     width: '100%',
                     height: '80vh',

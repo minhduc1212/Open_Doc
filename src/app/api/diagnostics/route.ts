@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { list, put, del } from '@vercel/blob';
+import { list, put, del, get } from '@vercel/blob';
 
 export async function GET() {
   const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -26,14 +26,21 @@ export async function GET() {
       const testFilename = `diagnostics-test-${Date.now()}.json`;
       const testContent = JSON.stringify({ test: true });
       const testBlob = await put(testFilename, testContent, {
-        access: 'public',
+        access: 'private',
         token,
       });
 
-      // Test reading
-      const fetchRes = await fetch(testBlob.url, { cache: 'no-store' });
-      const fetchContent = await fetchRes.json();
-      const readMatches = fetchContent.test === true;
+      // Test reading (using get API for private store compatibility)
+      const getResult = await get(testBlob.url, {
+        access: 'private',
+        token,
+      });
+      
+      let readMatches = false;
+      if (getResult) {
+        const fetchContent = await new Response(getResult.stream).json();
+        readMatches = fetchContent.test === true;
+      }
 
       // Test deleting
       await del(testBlob.url, { token });

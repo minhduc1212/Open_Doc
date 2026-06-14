@@ -1,4 +1,4 @@
-import { put, del } from '@vercel/blob';
+import { put, del, get } from '@vercel/blob';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -14,9 +14,9 @@ export async function uploadFile(buffer: Buffer, filename: string, mimeType?: st
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   
   if (token) {
-    // Use Vercel Blob
+    // Use Vercel Blob (Private mode to support private store configuration)
     const blob = await put(filename, buffer, {
-      access: 'public',
+      access: 'private',
       contentType: mimeType,
       token,
     });
@@ -55,12 +55,30 @@ export async function deleteFile(url: string): Promise<void> {
 }
 
 export async function getFileBuffer(url: string): Promise<Buffer> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+
   if (url.startsWith('/uploads/')) {
     const filename = url.replace('/uploads/', '');
     const filePath = path.join(UPLOADS_DIR, filename);
     return await fs.readFile(filePath);
   } else {
-    // Remote Vercel Blob URL
+    // Remote Vercel Blob URL (supports private store configurations)
+    if (token) {
+      try {
+        const result = await get(url, {
+          access: 'private',
+          token,
+        });
+        if (result) {
+          const arrayBuffer = await new Response(result.stream).arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        }
+      } catch (err) {
+        console.warn('Failed to retrieve private blob using get API, falling back to direct fetch:', err);
+      }
+    }
+    
+    // Direct HTTP fetch fallback
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch file from Vercel Blob: ${response.statusText}`);

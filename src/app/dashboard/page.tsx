@@ -344,7 +344,7 @@ export default function Dashboard() {
 
                   <div>
                     <a
-                      href={doc.url}
+                      href={`/api/docs/${doc.id}/download?disposition=attachment`}
                       download={doc.name}
                       target="_blank"
                       rel="noopener noreferrer"

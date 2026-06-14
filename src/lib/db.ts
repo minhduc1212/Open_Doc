@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { put, list } from '@vercel/blob';
+import { put, list, get } from '@vercel/blob';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
@@ -67,9 +67,14 @@ export async function readDb(): Promise<Database> {
     try {
       const url = await getDbBlobUrl(token);
       if (url) {
-        const res = await fetch(url, { cache: 'no-store' });
-        if (res.ok) {
-          return await res.json();
+        // Retrieve private database blob using Vercel Blob get method
+        const result = await get(url, {
+          access: 'private',
+          token,
+        });
+        if (result) {
+          const jsonText = await new Response(result.stream).text();
+          return JSON.parse(jsonText);
         }
       }
     } catch (e) {
@@ -96,7 +101,7 @@ export async function writeDb(data: Database): Promise<void> {
     // Cloud database (Vercel Blob)
     try {
       const blob = await put('db.json', JSON.stringify(data, null, 2), {
-        access: 'public',
+        access: 'private',
         addRandomSuffix: false,
         token,
       });
