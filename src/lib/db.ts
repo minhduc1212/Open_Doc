@@ -3,7 +3,6 @@ import path from 'path';
 import { put, list } from '@vercel/blob';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
-const token = process.env.BLOB_READ_WRITE_TOKEN;
 
 export interface User {
   id: string;
@@ -44,8 +43,7 @@ async function ensureLocalDb() {
 // Global variable to cache the Blob URL to avoid listing too often
 let dbBlobUrl: string | null = null;
 
-async function getDbBlobUrl(): Promise<string | null> {
-  if (!token) return null;
+async function getDbBlobUrl(token: string): Promise<string | null> {
   if (dbBlobUrl) return dbBlobUrl;
 
   try {
@@ -62,10 +60,12 @@ async function getDbBlobUrl(): Promise<string | null> {
 }
 
 export async function readDb(): Promise<Database> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  
   if (token) {
     // Cloud database (Vercel Blob)
     try {
-      const url = await getDbBlobUrl();
+      const url = await getDbBlobUrl(token);
       if (url) {
         const res = await fetch(url, { cache: 'no-store' });
         if (res.ok) {
@@ -90,6 +90,8 @@ export async function readDb(): Promise<Database> {
 }
 
 export async function writeDb(data: Database): Promise<void> {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  
   if (token) {
     // Cloud database (Vercel Blob)
     try {
